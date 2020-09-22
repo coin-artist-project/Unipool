@@ -2,8 +2,14 @@ const { BN, time } = require('openzeppelin-test-helpers');
 const { expect } = require('chai');
 
 const Uni = artifacts.require('UniMock');
-const Snx = artifacts.require('SnxMock');
-const Unipool = artifacts.require('UnipoolMock');
+const Coin = artifacts.require('CoinMock');
+const Cred = artifacts.require('Cred');
+const Unipool = artifacts.require('Unipool');
+
+let distributionAmount = 10000;
+let credMultiplier = 100;
+const ratio = () => distributionAmount/72000 * 7/30;
+const convertToExpected = (input) => String(Math.floor(parseInt(input, 10) * ratio()));
 
 async function timeIncreaseTo (seconds) {
     const delay = 10 - new Date().getMilliseconds();
@@ -44,12 +50,14 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
     describe('Unipool', async function () {
         beforeEach(async function () {
             this.uni = await Uni.new();
-            this.snx = await Snx.new();
-            this.pool = await Unipool.new(this.uni.address, this.snx.address);
+            this.coin = await Coin.new();
+            this.cred = await Cred.new();
+            this.pool = await Unipool.new(this.uni.address, this.coin.address, this.cred.address);
 
             await this.pool.setRewardDistribution(wallet1);
 
-            await this.snx.mint(this.pool.address, web3.utils.toWei('1000000'));
+            await this.coin.mint(this.pool.address, web3.utils.toWei('10000'));
+            await this.cred.mint(this.pool.address, web3.utils.toWei('1000000'));
             await this.uni.mint(wallet1, web3.utils.toWei('1000'));
             await this.uni.mint(wallet2, web3.utils.toWei('1000'));
             await this.uni.mint(wallet3, web3.utils.toWei('1000'));
@@ -65,8 +73,8 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
         });
 
         it('Two stakers with the same stakes wait 1 w', async function () {
-            // 72000 SNX per week for 3 weeks
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            // 2500 Coin per week for 3 weeks
+            await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18('0');
             expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
@@ -81,14 +89,14 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
 
             await timeIncreaseTo(this.started.add(time.duration.weeks(1)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('36000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('36000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('36000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('36000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('36000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('36000')));
         });
 
         it('Two stakers with the different (1:3) stakes wait 1 w', async function () {
-            // 72000 SNX per week
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            // 2500 Coin per week
+            await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18('0');
             expect(await this.pool.balanceOf(wallet1)).to.be.bignumber.equal('0');
@@ -105,19 +113,19 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
 
             await timeIncreaseTo(this.started.add(time.duration.weeks(1)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('18000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('18000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('54000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('18000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('18000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('54000')));
         });
 
-        it('Two stakers with the different (1:3) stakes wait 2 weeks', async function () {
+        it('Two stakers with the different (1:3) stakes wait 2 weeks, then finally 30 days', async function () {
             //
             // 1x: +----------------+ = 72k for 1w + 18k for 2w
             // 3x:         +--------+ =  0k for 1w + 54k for 2w
             //
 
-            // 72000 SNX per week
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            // 2500 Coin per week
+            await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             await this.pool.stake(web3.utils.toWei('1'), { from: wallet1 });
             
@@ -125,30 +133,40 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
 
             await this.pool.stake(web3.utils.toWei('3'), { from: wallet2 });
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('72000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('72000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('0'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('72000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('72000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('0')));
 
             // Forward to week 3 and notifyReward weekly
-            for (let i = 1; i < 3; i++) {
-                await timeIncreaseTo(this.started.add(time.duration.weeks(i + 1)));
-                await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
-            }
+            //for (let i = 1; i < 3; i++) {
+                //await timeIncreaseTo(this.started.add(time.duration.weeks(i + 1)));
+                //await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
+            //}
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('90000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('90000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('54000'));
+            // Forward to week 3
+            await timeIncreaseTo(this.started.add(time.duration.weeks(3)));
+
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('108000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('108000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('108000')));
+
+            // Forward to week 3
+            await timeIncreaseTo(this.started.add(time.duration.days(30)));
+
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('131154')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('131154')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('177429')));
         });
 
-        it('Three stakers with the different (1:3:5) stakes wait 3 weeks', async function () {
+        it('Three stakers with the different (1:3:5) stakes wait 3 weeks, then finally 30 days', async function () {
             //
             // 1x: +----------------+--------+ = 18k for 1w +  8k for 2w + 12k for 3w
             // 3x: +----------------+          = 54k for 1w + 24k for 2w +  0k for 3w
             // 5x:         +-----------------+ =  0k for 1w + 40k for 2w + 60k for 3w
             //
 
-            // 72000 SNX per week for 3 weeks
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            // 2500 Coin per week for 3 weeks
+            await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             await this.pool.stake(web3.utils.toWei('1'), { from: wallet1 });
             await this.pool.stake(web3.utils.toWei('3'), { from: wallet2 });
@@ -157,71 +175,66 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
 
             await this.pool.stake(web3.utils.toWei('5'), { from: wallet3 });
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('18000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('18000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('54000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('18000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('18000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('54000')));
 
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            //await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
             await timeIncreaseTo(this.started.add(time.duration.weeks(2)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('26000')); // 18k + 8k
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('26000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('78000'));
-            expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('40000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('26000'))); // 18k + 8k
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('26000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('78000')));
+            expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('40000')));
 
             await this.pool.exit({ from: wallet2 });
 
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            //await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
             await timeIncreaseTo(this.started.add(time.duration.weeks(3)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('38000')); // 18k + 8k + 12k
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('38000'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('0'));
-            expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('100000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('38000'))); // 18k + 8k + 12k
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('38000')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('0')));
+            expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('100000')));
+
+            //await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
+            await timeIncreaseTo(this.started.add(time.duration.days(30)));
+
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('53450'))); // 18k + 8k + 12k
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('53450')));
+            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('0')));
+            expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('177154')));
         });
 
-        it('One staker on 2 durations with gap', async function () {
-            // 72000 SNX per week for 1 weeks
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+        it('One staker on 2 durations with gap, then finally 30 days', async function () {
+            // 2500 Coin per week for 1 weeks
+            await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             await this.pool.stake(web3.utils.toWei('1'), { from: wallet1 });
 
             await timeIncreaseTo(this.started.add(time.duration.weeks(2)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('72000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('72000'));
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('144000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('144000')));
 
-            // 72000 SNX per week for 1 weeks
-            await this.pool.notifyRewardAmount(web3.utils.toWei('72000'), { from: wallet1 });
+            // 2500 Coin per week for 1 weeks
+            //await this.pool.notifyRewardAmount(web3.utils.toWei(String(distributionAmount)), { from: wallet1 });
 
             await timeIncreaseTo(this.started.add(time.duration.weeks(3)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('144000'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('144000'));
-        });
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('216000')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('216000')));
 
-        it('Notify Reward Amount from mocked distribution to 10,000', async function () {
-            // 10000 SNX per week for 1 weeks
-            await this.pool.notifyRewardAmount(web3.utils.toWei('10000'), { from: wallet1 });
+            await timeIncreaseTo(this.started.add(time.duration.days(30)));
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18('0');
-            expect(await this.pool.balanceOf(wallet1)).to.be.bignumber.equal('0');
-            expect(await this.pool.balanceOf(wallet2)).to.be.bignumber.equal('0');
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.equal('0');
+            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('308578')));
+            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(convertToExpected('308578')));
 
-            await this.pool.stake(web3.utils.toWei('1'), { from: wallet1 });
-            await this.pool.stake(web3.utils.toWei('3'), { from: wallet2 });
+            await this.pool.getReward({ from: wallet1 });
 
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18('0');
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.equal('0');
+            expect(await this.coin.balanceOf(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(String(distributionAmount)));
+            expect(await this.cred.balanceOf(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei(String(distributionAmount*credMultiplier)));
 
-            await timeIncreaseTo(this.started.add(time.duration.weeks(1)));
-
-            expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('2500'));
-            expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('2500'));
-            expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(web3.utils.toWei('7500'));
         });
     });
 });
