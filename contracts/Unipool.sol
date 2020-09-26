@@ -54,11 +54,11 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
-    constructor(IERC20 uniToken, IERC20 coinToken, IERC20 credToken) public {
-        uni = uniToken;
-        coin = coinToken;
-        cred = credToken;
-    }
+    constructor(IERC20 uniToken, IERC20 coinToken, IERC20 credToken) public { // Modified
+        uni = uniToken; // Modified
+        coin = coinToken; // Modified
+        cred = credToken; // Modified
+    } // Modified
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
@@ -119,7 +119,12 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
         if (reward > 0) {
             rewards[msg.sender] = 0;
             coin.safeTransfer(msg.sender, reward); // Modified
-            cred.safeTransfer(msg.sender, reward.mul(CREDPERCOINMULTIPLIER)); // Modified
+
+            uint256 credReward = reward.mul(CREDPERCOINMULTIPLIER); // Modified
+            if (cred.balanceOf(address(this)) >= credReward) { // Modified
+                cred.safeTransfer(msg.sender, credReward); // Modified
+            } // Modified
+
             emit RewardPaid(msg.sender, reward);
         }
     }

@@ -28,6 +28,6 @@ module.exports = function (deployer, network) {
 			return deployer.deploy(Unipool, uni, coin, credInst.address);
 		})
 		.then((uniInst) => {
-			return credInst.mint(uniInst.address, credMint);
+			return credInst.mint(uniInst.address, web3.utils.toWei(String(credMint), "ether"));
 		});
 };
