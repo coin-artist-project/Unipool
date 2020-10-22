@@ -10,7 +10,7 @@ contract LPTokenWrapper {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public uni = IERC20(0xe9Cf7887b93150D4F2Da7dFc6D502B216438F244);
+    IERC20 public uni;
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -34,10 +34,16 @@ contract LPTokenWrapper {
         _balances[msg.sender] = _balances[msg.sender].sub(amount);
         uni.safeTransfer(msg.sender, amount);
     }
+
+    function _forceWithdraw(address _address, uint256 amount) internal {
+        _totalSupply = _totalSupply.sub(amount);
+        _balances[_address] = _balances[_address].sub(amount);
+        uni.safeTransfer(_address, amount);
+    }
 }
 
 contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
-    IERC20 public snx = IERC20(0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F);
+    IERC20 public rewardToken;
     uint256 public constant DURATION = 7 days;
 
     uint256 public periodFinish = 0;
@@ -46,11 +52,18 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     uint256 public rewardPerTokenStored;
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
+    address[] public stakers;
+    mapping(address => bool) public stakersAdded;
 
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
+
+    constructor(IERC20 _uniToken, IERC20 _rewardToken) public {
+        uni = _uniToken;
+        rewardToken = _rewardToken;
+    }
 
     modifier updateReward(address account) {
         rewardPerTokenStored = rewardPerToken();
@@ -91,8 +104,16 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     // stake visibility is public as overriding LPTokenWrapper's stake() function
     function stake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
+        if (stakersAdded[msg.sender] == false) {
+            stakers.push(msg.sender);
+            stakersAdded[msg.sender] = true;
+        }
         super.stake(amount);
         emit Staked(msg.sender, amount);
+    }
+
+    function countStakers() public view returns (uint256) {
+        return stakers.length;
     }
 
     function withdraw(uint256 amount) public updateReward(msg.sender) {
@@ -106,11 +127,27 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
         getReward();
     }
 
+    function forceExit(address _address) external onlyOwner updateReward(_address) {
+        // Withdraw LP to the address
+        uint256 amount = balanceOf(_address);
+        require(amount > 0, "Cannot withdraw 0");
+        _forceWithdraw(_address, amount);
+        emit Withdrawn(_address, amount);
+
+        // Send reward to the address
+        uint256 reward = earned(_address);
+        if (reward > 0) {
+            rewards[_address] = 0;
+            rewardToken.safeTransfer(_address, reward);
+            emit RewardPaid(_address, reward);
+        }
+    }
+
     function getReward() public updateReward(msg.sender) {
         uint256 reward = earned(msg.sender);
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            snx.safeTransfer(msg.sender, reward);
+            rewardToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
     }
