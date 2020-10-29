@@ -3,7 +3,7 @@ const { expect } = require('chai');
 
 const Uni = artifacts.require('UniMock');
 const Snx = artifacts.require('SnxMock');
-const Unipool = artifacts.require('UnipoolMock');
+const Unipool = artifacts.require('Unipool');
 
 async function timeIncreaseTo (seconds) {
     const delay = 10 - new Date().getMilliseconds();
