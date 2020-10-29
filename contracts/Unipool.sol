@@ -47,6 +47,10 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     mapping(address => uint256) public userRewardPerTokenPaid;
     mapping(address => uint256) public rewards;
 
+    // Keep track of stakers
+    address[] public stakers;
+    mapping(address => bool) public stakersAdded;
+
     event RewardAdded(uint256 reward);
     event Staked(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
@@ -55,6 +59,23 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     constructor(IERC20 _stakedToken, IERC20 _rewardToken) public {
         stakedToken = _stakedToken;
         rewardToken = _rewardToken;
+    }
+
+    // Allow setting a new reward token, but only under certain conditions
+    function setNewRewardToken(IERC20 _rewardToken)
+        public
+        onlyOwner
+    {
+        // Require that (nearly) all tokens are removed from the previous contract
+        require(rewardToken.balanceOf(address(this)) <= 1, "Must clear previous token");
+        rewardToken = _rewardToken;
+    }
+
+    function retrieveRemainingRewardTokens()
+        public
+        onlyOwner
+    {
+        rewardToken.safeTransfer(msg.sender, rewardToken.balanceOf(address(this)));
     }
 
     modifier updateReward(address account) {
@@ -96,8 +117,16 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     // stake visibility is public as overriding LPTokenWrapper's stake() function
     function stake(uint256 amount) public updateReward(msg.sender) {
         require(amount > 0, "Cannot stake 0");
+        if (stakersAdded[msg.sender] == false) {
+            stakers.push(msg.sender);
+            stakersAdded[msg.sender] = true;
+        }
         super.stake(amount);
         emit Staked(msg.sender, amount);
+    }
+
+    function countStakers() public view returns (uint256) {
+        return stakers.length;
     }
 
     function withdraw(uint256 amount) public updateReward(msg.sender) {
@@ -117,6 +146,16 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
             rewards[msg.sender] = 0;
             rewardToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    // Send reward to specific address
+    function getReward(address _address) public updateReward(_address) {
+        uint256 reward = earned(_address);
+        if (reward > 0) {
+            rewards[_address] = 0;
+            rewardToken.safeTransfer(_address, reward);
+            emit RewardPaid(_address, reward);
         }
     }
 
