@@ -6,6 +6,8 @@ const Uni = artifacts.require('UniMock');
 const Snx = artifacts.require('SnxMock');
 const Unipool = artifacts.require('Unipool');
 
+const ONEWEEK = "604800";
+
 async function timeIncreaseTo (seconds) {
     const delay = 10 - new Date().getMilliseconds();
     await new Promise(resolve => setTimeout(resolve, delay));
@@ -46,7 +48,7 @@ contract('Unipool', function ([_, wallet1, wallet2, wallet3, wallet4]) {
         beforeEach(async function () {
             this.uni = await Uni.new();
             this.snx = await Snx.new();
-            this.pool = await Unipool.new(this.uni.address, this.snx.address);
+            this.pool = await Unipool.new(this.uni.address, this.snx.address, ONEWEEK);
 
             await this.pool.setRewardDistribution(wallet1);
 

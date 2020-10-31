@@ -44,7 +44,7 @@ contract LPTokenWrapper {
 
 contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public rewardToken;
-    uint256 public constant DURATION = 7 days;
+    uint256 public DURATION;
 
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
@@ -60,9 +60,10 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     event Withdrawn(address indexed user, uint256 amount);
     event RewardPaid(address indexed user, uint256 reward);
 
-    constructor(IERC20 _uniToken, IERC20 _rewardToken) public {
+    constructor(IERC20 _uniToken, IERC20 _rewardToken, uint256 _duration) public {
         uni = _uniToken;
         rewardToken = _rewardToken;
+        DURATION = _duration;
     }
 
     modifier updateReward(address account) {

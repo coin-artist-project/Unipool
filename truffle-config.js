@@ -28,8 +28,7 @@ module.exports = {
         rinkeby_private_key,
         'https://rinkeby.infura.io/v3/' + infura_key
       ),
-      gas: 6721975,
-      gasPrice: 80000000000, // 80 gwei
+      gasPrice: 1000000000, // 1 gwei
       network_id: '4'
     },
     mainnet: {
@@ -37,8 +36,7 @@ module.exports = {
         mainnet_private_key,
         'https://mainnet.infura.io/v3/' + infura_key
       ),
-      gas: 6721975,
-      gasPrice: 80000000000, // 80 gwei
+      gasPrice: 40000000000, // 40 gwei
       network_id: '1'
     }
   },
