@@ -36,7 +36,7 @@ module.exports = {
         mainnet_private_key,
         'https://mainnet.infura.io/v3/' + infura_key
       ),
-      gasPrice: 40000000000, // 40 gwei
+      gasPrice: 30000000000, // 30 gwei
       network_id: '1'
     }
   },

@@ -13,13 +13,15 @@ module.exports = async function (deployer, network) {
 	// Now get all the tokens
     let rewardTokenCoin, rewardTokenCred, rewardTokenTrsh, coin, cred, trsh;
 	if (network.indexOf('mainnet') !== -1) {
-		rewardTokenCoin = '';
-		rewardTokenCred = '';
-		rewardTokenTrsh = '';
+		console.log("Deploying mainnet");
+		rewardTokenCoin = '0xcCE50fD7f41574AdB8fA600055B74303111f2e40';
+		rewardTokenCred = '0x783E2dcFbf6F40c6943d9AdeD6113C7013c46c9b';
+		rewardTokenTrsh = '0xA69fCAaA3F5AE04E63a7FeC7Aff9277BC0BDf8B4';
 		coin = '0x87b008E57F640D94Ee44Fd893F0323AF933F9195';
-		cred = '';
-		trsh = '';
+		cred = '0xED7Fa212E100DFb3b13B834233E4B680332a3420';
+		trsh = '0x0f46eba0bafe2739d9f3c43a48bb84bee1f6644f';
 	} else {
+		console.log("Deploying testnet:", network);
 		// Deploy if needed
 		//rewardTokenCoin = await deployer.deploy(ERC20Token, "COINW1REWARD", "COW1R");
 		//rewardTokenCred = await deployer.deploy(ERC20Token, "CREDW1REWARD", "CRW1R");
