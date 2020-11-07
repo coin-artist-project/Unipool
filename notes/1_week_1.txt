@@ -1,0 +1,160 @@
+cybourgeoisie@Rs-MacBook-Pro Unipool % npx truffle deploy --network mainnet          
+
+Compiling your contracts...
+===========================
+> Everything is up to date, there is nothing to compile.
+
+
+
+Migrations dry-run (simulation)
+===============================
+> Network name:    'mainnet-fork'
+> Network id:      1
+> Block gas limit: 0xbe8c72
+
+
+1_week_1.js
+===========
+
+   Deploying 'Migrations'
+   ----------------------
+   > block number:        11166667
+   > block timestamp:     1604173815
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.483223679664311394
+   > gas used:            175982
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00527946 ETH
+
+Deploying mainnet
+
+   Deploying 'Unipool'
+   -------------------
+   > block number:        11166668
+   > block timestamp:     1604173819
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.436579079664311394
+   > gas used:            1554820
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0466446 ETH
+
+
+   Replacing 'Unipool'
+   -------------------
+   > block number:        11166669
+   > block timestamp:     1604173823
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.389934479664311394
+   > gas used:            1554820
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0466446 ETH
+
+
+   Replacing 'Unipool'
+   -------------------
+   > block number:        11166670
+   > block timestamp:     1604173828
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.343287959664311394
+   > gas used:            1554884
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.04664652 ETH
+
+   -------------------------------------
+   > Total cost:          0.14521518 ETH
+
+
+Summary
+=======
+> Total deployments:   4
+> Final cost:          0.14521518 ETH
+
+
+
+
+
+Starting migrations...
+======================
+> Network name:    'mainnet'
+> Network id:      1
+> Block gas limit: 0xbe5cc4
+
+
+1_week_1.js
+===========
+
+   Deploying 'Migrations'
+   ----------------------
+   > transaction hash:    0x7253b3f31d84f870d30385f9388a38604f8e70226cc037610beb9e7e9b11ed85
+   > Blocks: 0            Seconds: 0
+   > contract address:    0x58615ac928B608467fA1395e977D97BbA57cD541
+   > block number:        11166669
+   > block timestamp:     1604173819
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.483454559664311394
+   > gas used:            168286
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.00504858 ETH
+
+Deploying mainnet
+
+   Deploying 'Unipool'
+   -------------------
+   > transaction hash:    0xda491c0f0b1d13b38d188f9a4962998c3bc9090496d98cd6788f4c682a9001e8
+   > Blocks: 0            Seconds: 8
+   > contract address:    0xcdB2a49667c1b3Eeb083159ea3bDb6dc1D5aBecf
+   > block number:        11166670
+   > block timestamp:     1604173834
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.443224919664311394
+   > gas used:            1340988
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.04022964 ETH
+
+
+   Replacing 'Unipool'
+   -------------------
+   > transaction hash:    0xf354bb9b1d518460463a5e507245992b263087fd59c5c62431d07b0cf5cd689a
+   > Blocks: 0            Seconds: 4
+   > contract address:    0x606517B453Fa0bfE8a39bda2d3401fF543506355
+   > block number:        11166671
+   > block timestamp:     1604173847
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.402995279664311394
+   > gas used:            1340988
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.04022964 ETH
+
+
+   Replacing 'Unipool'
+   -------------------
+   > transaction hash:    0x6585edfccf2fb61e482dd80f5f62f7c5c0bdfd4ce8ed198812fae05ddc1c1b8a
+   > Blocks: 1            Seconds: 4
+   > contract address:    0xD4639AE0A59287a72d27D22bD374d848cbb798DB
+   > block number:        11166672
+   > block timestamp:     1604173854
+   > account:             0x63581507bF4444b062685B6C1898f8C5CD57bfFc
+   > balance:             1.362765279664311394
+   > gas used:            1341000
+   > gas price:           30 gwei
+   > value sent:          0 ETH
+   > total cost:          0.04023 ETH
+
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:          0.12573786 ETH
+
+
+Summary
+=======
+> Total deployments:   4
+> Final cost:          0.12573786 ETH
