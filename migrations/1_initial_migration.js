@@ -1,9 +1,10 @@
 const Migrations = artifacts.require('./Migrations.sol');
-const Cred = artifacts.require('./Cred.sol');
+//const Cred = artifacts.require('./Cred.sol');
 const Unipool = artifacts.require('./Unipool.sol');
 
 module.exports = function (deployer, network) {
 
+	/*
 	let coin, uni;
 	if (network.indexOf('mainnet') !== -1) {
 		coin = '0x87b008E57F640D94Ee44Fd893F0323AF933F9195';
@@ -29,5 +30,24 @@ module.exports = function (deployer, network) {
 		})
 		.then((uniInst) => {
 			return credInst.mint(uniInst.address, web3.utils.toWei(String(credMint), "ether"));
+		});
+	*/
+
+	let coin, uni, cred;
+	if (network.indexOf('mainnet') !== -1) {
+		coin = '0x87b008E57F640D94Ee44Fd893F0323AF933F9195';
+		uni = '0xCCE852e473eCfDEBFD6d3fD5BaE9e964fd2A3Fa7';
+		cred = '0xED7Fa212E100DFb3b13B834233E4B680332a3420';
+	} else {
+		// Rinkeby
+		coin = '0x81F63d3768A85Be640E1ee902Ffeb1484bC255aD';
+		uni = '0xB56A869b307d288c3E40B65e2f77038F3579F868';
+		cred = '0xED7Fa212E100DFb3b13B834233E4B680332a3420';
+	}
+
+	// Deploy all
+	deployer.deploy(Migrations)
+		.then(() => {
+			return deployer.deploy(Unipool, uni, coin, cred);
 		});
 };

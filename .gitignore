@@ -1,3 +1,6 @@
+package-lock.json
+old_migrations
+notes
 build
 .DS_Store
 node_modules

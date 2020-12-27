@@ -38,9 +38,9 @@ contract LPTokenWrapper {
 
 contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
     IERC20 public coin = IERC20(0x87b008E57F640D94Ee44Fd893F0323AF933F9195); // Modified
-    IERC20 public cred = IERC20(0x0000000000000000000000000000000000000000); // Modified
-    uint256 public constant CREDPERCOINMULTIPLIER = 100; // Modified
-    uint256 public constant DURATION = 30 days; // Modified
+    IERC20 public cred = IERC20(0xED7Fa212E100DFb3b13B834233E4B680332a3420); // Modified
+    uint256 public CREDPERCOINMULTIPLIER = 100; // Modified
+    uint256 public DURATION = 30 days; // Modified
 
     uint256 public periodFinish = 0;
     uint256 public rewardRate = 0;
@@ -128,6 +128,21 @@ contract Unipool is LPTokenWrapper, IRewardDistributionRecipient {
             emit RewardPaid(msg.sender, reward);
         }
     }
+
+    function setPeriodDuration(uint256 _duration)
+        external onlyRewardDistribution // Modified
+    { // Modified
+        require(periodFinish < now, "Period is not yet over"); // Modified
+        require(_duration >= 1, "Invalid duration"); // Modified
+        DURATION = _duration; // Modified
+    } // Modified
+
+    function setCredMultiplier(uint256 multiplier)
+        external onlyRewardDistribution // Modified
+    { // Modified
+        require(multiplier >= 1, "Invalid CRED multiplier"); // Modified
+        CREDPERCOINMULTIPLIER = multiplier; // Modified
+    } // Modified
 
     function notifyRewardAmount(uint256 reward)
         external
